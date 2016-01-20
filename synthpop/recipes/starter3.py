@@ -137,7 +137,7 @@ class Starter:
         male_age_columns = ['B01001_0%02dE' % i for i in range(3, 26)]
         female_age_columns = ['B01001_0%02dE' % i for i in range(27, 50)]
         all_columns = population + sex + race + male_age_columns + \
-            female_age_columns + hh_population + hispanic
+            female_age_columns + hh_population 
         p_acs = c.block_group_query(all_columns, state, county, tract=tract)
 
         self.p_acs_cat = cat.categorize(p_acs, {
@@ -217,7 +217,7 @@ class Starter:
         num_workers = p_pums[p_pums.ESR.isin([1, 2, 4, 5])].groupby(
             'serialno').size()
         h_pums['race_of_head'] = p_pums[p_pums.RELP == 0].groupby(
-##            'serialno').RAC1P.max()
+            'serialno').RAC1P.max()
 ##        h_pums['hispanic_head'] = p_pums[p_pums.RELP == 0].groupby(
 ##            'serialno').HISP.max()
         h_pums['age_of_head'] = age_of_head
@@ -317,7 +317,8 @@ class Starter:
              "hh_age_of_head": age_of_head_cat,
              #"sf_detached": sf_detached_cat,
              "hh_race_of_head": race_of_head_cat,
-             #"hispanic_head": hispanic_head_cat}
+             #"hispanic_head": hispanic_head_cat
+             }
         )
         return h_pums, jd_households
 
@@ -363,6 +364,7 @@ class Starter:
             p_pums,
             cat.category_combinations(self.p_acs_cat.columns),
             {"person_age": age_cat, "race": race_cat, "person_sex": sex_cat,
-             #"hispanic": hispanic_cat}
+             #"hispanic": hispanic_cat
+             }
         )
         return p_pums, jd_persons
