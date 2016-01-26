@@ -8,25 +8,53 @@ import us
 class Census:
 
     def __init__(self, key):
+#### original url setup        
+##        self.c = census.Census(key)
+##        self.base_url = "https://s3-us-west-2.amazonaws.com/synthpop-data/"
+##        self.pums_relationship_file_url = self.base_url + "tract10_to_puma.csv"
+##        self.pums_relationship_df = None
+##        self.pums10_population_base_url = \
+##            self.base_url + "puma10_p_%s_%s.csv"
+##        self.pums10_household_base_url = \
+##            self.base_url + "puma10_h_%s_%s.csv"
+##        self.pums00_population_base_url = \
+##            self.base_url + "puma00_p_%s_%s.csv"
+##        self.pums00_household_base_url = \
+##            self.base_url + "puma00_h_%s_%s.csv"
+##        self.pums_population_state_base_url = \
+##            self.base_url + "puma_p_%s.csv"
+##        self.pums_household_state_base_url = \
+##            self.base_url + "puma_h_%s.csv"
+##        self.fips_url = self.base_url + "national_county.txt"
+##        self.fips_df = None
+##        self.pums_cache = {}
+
+
         self.c = census.Census(key)
-        self.base_url = "https://s3-us-west-2.amazonaws.com/synthpop-data/"
-        self.pums_relationship_file_url = self.base_url + "tract10_to_puma.csv"
+        self.pums_relationship_file_url = "2010_Census_Tract_to_2010_PUMA.txt"
+        #http://www2.census.gov/geo/docs/maps-data/data/rel/2010_Census_Tract_to_2010_PUMA.txt
         self.pums_relationship_df = None
-        self.pums10_population_base_url = \
-            self.base_url + "puma10_p_%s_%s.csv"
-        self.pums10_household_base_url = \
-            self.base_url + "puma10_h_%s_%s.csv"
-        self.pums00_population_base_url = \
-            self.base_url + "puma00_p_%s_%s.csv"
-        self.pums00_household_base_url = \
-            self.base_url + "puma00_h_%s_%s.csv"
+        #self.base_url = "http://paris.urbansim.org/data/pums/"
+        self.base_url = ""
+        self.pums_population_base_url = \
+            self.base_url + "puma_p_%s_%s.csv"
+        self.pums_household_base_url = \
+            self.base_url + "puma_h_%s_%s.csv"
         self.pums_population_state_base_url = \
             self.base_url + "puma_p_%s.csv"
         self.pums_household_state_base_url = \
             self.base_url + "puma_h_%s.csv"
-        self.fips_url = self.base_url + "national_county.txt"
+        #self.fips_url = "http://www2.census.gov/geo/docs/reference/codes/files/national_county.txt"
+        self.fips_url = "national_county.txt"
+        #self.fips_url = "https://raw.githubusercontent.com/keithlayne/ansi_codes/master/data/national_county.txt"
+        #"https://www.census.gov/geo/reference/codes/files/national_county.txt"
+        #http://www2.census.gov/geo/docs/reference/codes/files/national_county.txt
         self.fips_df = None
         self.pums_cache = {}
+
+
+
+
 
     # df1 is the disaggregate data frame (e.g. block groups)
     # df2 is the aggregate data frame (e.g. tracts)
