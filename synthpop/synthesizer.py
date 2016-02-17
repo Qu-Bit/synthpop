@@ -32,6 +32,8 @@ def synthesize(h_marg, p_marg, h_jd, p_jd, h_pums, p_pums,
     h_marg = h_marg.replace(0, marginal_zero_sub)
     p_marg = p_marg.replace(0, marginal_zero_sub)
 
+  
+
     # zero cell problem
     h_jd.frequency = h_jd.frequency.replace(0, jd_zero_sub)
     p_jd.frequency = p_jd.frequency.replace(0, jd_zero_sub)
@@ -107,8 +109,10 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
     cnt = 0
     fit_quality = {}
     hh_index_start = 0
-
+    
     # TODO will parallelization work here?
+    lst_output=[['geo_id','hh_marg','hh_output','person_marg','person_output','p_chisq','p_p']]
+    marg_lst=[]
     for geog_id in indexes:
         print "Synthesizing geog id:\n", geog_id
 
@@ -119,6 +123,7 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
         p_marg = recipe.get_person_marginal_for_geography(geog_id)
         logger.debug("Person marginal")
         logger.debug(p_marg)
+
 
         h_pums, h_jd = recipe.\
             get_household_joint_dist_for_geography(geog_id)
@@ -134,6 +139,14 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
                 h_marg, p_marg, h_jd, p_jd, h_pums, p_pums,
                 marginal_zero_sub=marginal_zero_sub, jd_zero_sub=jd_zero_sub,
                 hh_index_start=hh_index_start)
+
+
+        for df_marg in [h_marg, p_marg]:
+            df_marg=df_marg.copy().reset_index()
+            df_marg.columns=['cat_name','cat_value','marginal']
+            for indx in reversed(geog_id.index):
+                df_marg.insert(0, indx, geog_id[indx]) 
+            marg_lst.append(df_marg)
 
         # Append location identifiers to the synthesized households
         for geog_cat in geog_id.keys():
@@ -157,4 +170,5 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
     all_households = pd.concat(hh_list)
     all_persons = pd.concat(people_list, ignore_index=True)
 
-    return (all_households, all_persons, fit_quality)
+
+    return (all_households, all_persons, fit_quality, marg_lst)
