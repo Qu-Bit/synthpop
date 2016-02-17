@@ -31,9 +31,11 @@ def sum_accross_category(df, subtract_mean=True):
     exactly zero is because of rounding errors in the scaling of any tract
     variables down to block group variables
     """
+
     df = df.stack(level=1).fillna(0).groupby(level=0).sum()
     if subtract_mean:
         df = df.sub(df.mean(axis=1), axis="rows")
+
     return df
 
 
@@ -54,6 +56,7 @@ def category_combinations(index):
     df.columns = cols = d.keys()
     df.index.name = "cat_id"
     df = df.reset_index().set_index(cols)
+
     return df
 
 

@@ -31,12 +31,11 @@ class Census:
 
 
         self.c = census.Census(key)
-        self.pums_relationship_file_url = "tract10_to_puma.csv"
+        self.base_url = "/home/da/tools/synthpop/demos/inputs/"
+        self.pums_relationship_file_url =self.base_url+ "tract10_to_puma.csv"
         #http://www2.census.gov/geo/docs/maps-data/data/rel/2010_Census_Tract_to_2010_PUMA.txt
         self.pums_relationship_df = None
         #self.base_url = "http://paris.urbansim.org/data/pums/"
-        #self.base_url = "~/tools/synthpop/demos/input_data/"
-        self.base_url = ""
         self.pums10_population_base_url = \
             self.base_url + "puma10_p_%s_%s.csv"
         self.pums10_household_base_url = \
