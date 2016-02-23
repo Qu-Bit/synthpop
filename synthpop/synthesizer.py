@@ -25,6 +25,19 @@ def enable_logging():
     logger.setLevel(logging.DEBUG)
 
 
+def rebalance(x0, tar, w=None):
+    x = x0.copy()
+    rx = np.array(range(len(x0)))
+    if w is None:
+        w = rx + 1
+    while x.dot(w) < tar:
+        i = np.random.choice(rx, p=(1.0 * x / x.sum()))
+        j = np.random.choice(rx[i:], p=(1.0 * x[i:] / x[i:].sum()))
+        x[i] -= 1
+        x[j] += 1
+    return x
+
+
 def synthesize(h_marg, p_marg, h_jd, p_jd, h_pums, p_pums,
                marginal_zero_sub=.01, jd_zero_sub=.001, hh_index_start=0):
 
@@ -124,7 +137,6 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
         logger.debug("Person marginal")
         logger.debug(p_marg)
 
-
         h_pums, h_jd = recipe.\
             get_household_joint_dist_for_geography(geog_id)
         logger.debug("Household joint distribution")
@@ -134,19 +146,32 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
         logger.debug("Person joint distribution")
         logger.debug(p_jd)
 
-        households, people, people_chisq, people_p = \
-            synthesize(
-                h_marg, p_marg, h_jd, p_jd, h_pums, p_pums,
-                marginal_zero_sub=marginal_zero_sub, jd_zero_sub=jd_zero_sub,
-                hh_index_start=hh_index_start)
-
+        if hasattr(recipe, "hh_size_order") and hasattr(recipe, "get_hh_size_weight"):
+            orig_hh_size = h_marg.loc["hh_size"].loc[recipe.hh_size_order]
+            h_marg.loc["hh_size"].loc[recipe.hh_size_order] = rebalance(
+                orig_hh_size,
+                tar=max(p_marg.groupby(level=0).sum()),
+                w=np.array(recipe.get_hh_size_weight(geog_id)))
+        
+            # df_marg=orig_hh_size.copy().reset_index()
+            # df_marg.insert(0, 'cat_name', 'orig_hh_size')
+            # df_marg.columns=['cat_name','cat_value','marginal']
+            # for indx in reversed(geog_id.index):
+            #     df_marg.insert(0, indx, geog_id[indx])
+            # marg_lst.append(df_marg)
 
         for df_marg in [h_marg, p_marg]:
             df_marg=df_marg.copy().reset_index()
             df_marg.columns=['cat_name','cat_value','marginal']
             for indx in reversed(geog_id.index):
-                df_marg.insert(0, indx, geog_id[indx]) 
+                df_marg.insert(0, indx, geog_id[indx])
             marg_lst.append(df_marg)
+
+        households, people, people_chisq, people_p = \
+            synthesize(
+                h_marg, p_marg, h_jd, p_jd, h_pums, p_pums,
+                marginal_zero_sub=marginal_zero_sub, jd_zero_sub=jd_zero_sub,
+                hh_index_start=hh_index_start)
 
         # Append location identifiers to the synthesized households
         for geog_cat in geog_id.keys():

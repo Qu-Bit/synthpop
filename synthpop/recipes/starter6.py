@@ -182,6 +182,9 @@ class Starter:
 ##                                         "B25009_009E + B25009_017E",
         }, index_cols=['state', 'county', 'tract', 'block group'])
 
+        self.hh_size_order = ["one", "two", "three", "four", "five",
+                              "six", "seven or more"]
+
         # gq_population = ['B26001_001E']
         # HH population, for the hhpop/totalpop adjustment
         hh_population = ['B11002_001E']
@@ -251,6 +254,12 @@ class Starter:
 ##                "(B03003_002E) * B11002_001E*1.0/B01001_001E",
         }, index_cols=['state', 'county', 'tract', 'block group'])
 
+        self.hh_size_weight_7 = pd.read_csv("hh7_persons_drawing.csv",dtype=str)
+        self.hh_size_weight_7.set_index(['state', 'county', 'tract', 'block group'], inplace=True)
+
+    def get_hh_size_weight(self, ind):
+        return np.array([1, 2, 3, 4, 5, 6, float(self.hh_size_weight_7.loc[tuple(ind.values)])])
+
     def get_geography_name(self):
         # this synthesis is at the block group level for most variables
         return "block_group"
@@ -270,17 +279,21 @@ class Starter:
     def get_person_marginal_for_geography(self, ind):
         return self.p_acs_cat.loc[tuple(ind.values)]
 
-    def get_household_joint_dist_for_geography(self, ind):
+    def get_household_joint_dist_for_geography(self, ind, county=None):
         c = self.c
 
-        puma10, puma00 = c.tract_to_puma(ind.state, ind.county, ind.tract)
-        # this is cached so won't download more than once
-        if type(puma00) == str:
-            h_pums = self.c.download_household_pums(ind.state, puma10, puma00)
-            p_pums = self.c.download_population_pums(ind.state, puma10, puma00)
-        elif np.isnan(puma00):  # only puma10 available
-            h_pums = self.c.download_household_pums(ind.state, puma10, None)
-            p_pums = self.c.download_population_pums(ind.state, puma10, None)
+        if not county:
+            puma10, puma00 = c.tract_to_puma(ind.state, ind.county, ind.tract)
+            # this is cached so won't download more than once
+            if type(puma00) == str:
+                h_pums = self.c.download_household_pums(ind.state, puma10, puma00)
+                p_pums = self.c.download_population_pums(ind.state, puma10, puma00)
+            elif np.isnan(puma00):  # only puma10 available
+                h_pums = self.c.download_household_pums(ind.state, puma10, None)
+                p_pums = self.c.download_population_pums(ind.state, puma10, None)
+        else:
+            h_pums = pd.read_csv('sem_h_pums.csv')
+            p_pums = pd.read_csv('sem_p_pums.csv')
 
         h_pums = h_pums.set_index('serialno')
 
