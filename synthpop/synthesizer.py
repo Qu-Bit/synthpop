@@ -30,11 +30,18 @@ def rebalance(x0, tar, w=None):
     rx = np.array(range(len(x0)))
     if w is None:
         w = rx + 1
-    while x.dot(w) < tar:
+    i = j = 0
+    small_dot = large_dot = x.dot(w)
+    while large_dot < tar:
         i = np.random.choice(rx, p=(1.0 * x / x.sum()))
         j = np.random.choice(rx[i:], p=(1.0 * x[i:] / x[i:].sum()))
+        small_dot = large_dot
         x[i] -= 1
         x[j] += 1
+        large_dot = x.dot(w)
+    if abs(small_dot - tar) > abs(large_dot - tar):
+        x[i] += 1
+        x[j] -= 1
     return x
 
 
