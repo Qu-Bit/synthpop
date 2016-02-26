@@ -27,21 +27,16 @@ def enable_logging():
 
 def rebalance(x0, tar, w=None):
     x = x0.copy()
+    hh = x.sum()
     rx = np.array(range(len(x0)))
     if w is None:
         w = rx + 1
-    i = j = 0
-    small_dot = large_dot = x.dot(w)
-    while large_dot < tar:
-        i = np.random.choice(rx, p=(1.0 * x / x.sum()))
+    while x.dot(w) < tar and x.max() < hh:
+        # print tar, x.dot(w), x
+        i = np.random.choice(rx[:-1], p=(1.0 * x[:-1] / x[:-1].sum()))
         j = np.random.choice(rx[i:], p=(1.0 * x[i:] / x[i:].sum()))
-        small_dot = large_dot
         x[i] -= 1
         x[j] += 1
-        large_dot = x.dot(w)
-    if abs(small_dot - tar) > abs(large_dot - tar):
-        x[i] += 1
-        x[j] -= 1
     return x
 
 
@@ -157,7 +152,7 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
             orig_hh_size = h_marg.loc["hh_size"].loc[recipe.hh_size_order]
             h_marg.loc["hh_size"].loc[recipe.hh_size_order] = rebalance(
                 orig_hh_size,
-                tar=max(p_marg.groupby(level=0).sum()),
+                tar=max(p_marg.groupby(level=0).sum()) * 1.006,
                 w=np.array(recipe.get_hh_size_weight(geog_id)))
         
             # df_marg=orig_hh_size.copy().reset_index()
