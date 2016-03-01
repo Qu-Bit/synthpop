@@ -39,11 +39,12 @@ class Starter:
     tract_to_puma_map : dictionary
         keys are tract ids and pumas are puma ids
     """
-    def __init__(self, key, state, county, tract=None):
+    def __init__(self, key, state, county, tract=None, phase=2):
         self.c = c = Census(key)
         self.state = state
         self.county = county
         self.tract = tract
+        self.phase = phase
 
         #structure_size_columns = ['B25032_0%02dE' % i for i in range(1, 24)]
         age_of_head_columns = ['B25007_0%02dE' % i for i in range(1, 22)]
@@ -182,8 +183,9 @@ class Starter:
 ##                                         "B25009_009E + B25009_017E",
         }, index_cols=['state', 'county', 'tract', 'block group'])
 
-        self.hh_size_order = ["one", "two", "three", "four", "five",
-                              "six", "seven or more"]
+        if phase >= 1:
+            self.hh_size_order = ["one", "two", "three", "four", "five",
+                                  "six", "seven or more"]
 
         # gq_population = ['B26001_001E']
         # HH population, for the hhpop/totalpop adjustment
@@ -254,11 +256,19 @@ class Starter:
 ##                "(B03003_002E) * B11002_001E*1.0/B01001_001E",
         }, index_cols=['state', 'county', 'tract', 'block group'])
 
-        self.hh_size_weight_7 = pd.read_csv("hh7_persons_drawing.csv",dtype=str)
-        self.hh_size_weight_7.set_index(['state', 'county', 'tract', 'block group'], inplace=True)
+        if phase >= 1:
+            self.hh_size_weight_7 = pd.read_csv(
+                "hh7_persons_drawing.csv",dtype=str)
+            self.hh_size_weight_7.set_index(
+                ['state', 'county', 'tract', 'block group'], inplace=True)
 
     def get_hh_size_weight(self, ind):
         return np.array([1, 2, 3, 4, 5, 6, float(self.hh_size_weight_7.loc[tuple(ind.values)])])
+
+    def get_hh_size_factor(self, ind):
+        if self.phase >= 2:
+            return 1.006
+        return 1.0
 
     def get_geography_name(self):
         # this synthesis is at the block group level for most variables

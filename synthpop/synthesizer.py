@@ -148,11 +148,14 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
         logger.debug("Person joint distribution")
         logger.debug(p_jd)
 
-        if hasattr(recipe, "hh_size_order") and hasattr(recipe, "get_hh_size_weight"):
+        if (hasattr(recipe, "hh_size_order") and
+            hasattr(recipe, "get_hh_size_weight") and
+            hasattr(recipe, "get_hh_size_factor")):
             orig_hh_size = h_marg.loc["hh_size"].loc[recipe.hh_size_order]
             h_marg.loc["hh_size"].loc[recipe.hh_size_order] = rebalance(
                 orig_hh_size,
-                tar=max(p_marg.groupby(level=0).sum()) * 1.006,
+                tar=max(p_marg.groupby(level=0).sum()) *
+                    recipe.get_hh_size_factor(geog_id),
                 w=np.array(recipe.get_hh_size_weight(geog_id)))
         
             # df_marg=orig_hh_size.copy().reset_index()
