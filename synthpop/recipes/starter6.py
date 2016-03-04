@@ -261,14 +261,17 @@ class Starter:
                 "hh7_persons_drawing.csv",dtype=str)
             self.hh_size_weight_7.set_index(
                 ['state', 'county', 'tract', 'block group'], inplace=True)
+        if phase >= 2:
+            self.hh_size_person_factor = pd.read_csv(
+                "hh_size_person_factor.csv",dtype=str).hh_size_person_factor.ix[0]
+        else:
+            self.hh_size_person_factor = 1.0
 
     def get_hh_size_weight(self, ind):
-        return np.array([1, 2, 3, 4, 5, 6, float(self.hh_size_weight_7.loc[tuple(ind.values)])])
+        return np.array([1, 2, 3, 4, 5, 6, max(float(self.hh_size_weight_7.loc[tuple(ind.values)].hh_size_weight_7), 7)])
 
-    def get_hh_size_factor(self, ind):
-        if self.phase >= 2:
-            return 1.006
-        return 1.0
+    def get_hh_size_person_factor(self, ind):
+        return self.hh_size_person_factor
 
     def get_geography_name(self):
         # this synthesis is at the block group level for most variables
