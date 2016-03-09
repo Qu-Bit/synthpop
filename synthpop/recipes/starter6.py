@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import os
 
 from .. import categorizer as cat
 from ..census_helpers import Census
@@ -255,7 +256,7 @@ class Starter:
 ##            ("hispanic", "no"):
 ##                "(B03003_002E) * B11002_001E*1.0/B01001_001E",
         }, index_cols=['state', 'county', 'tract', 'block group'])
-
+        
         if phase >= 1:
             self.hh_size_weight_7 = pd.read_csv(
                 "hh7_persons_drawing.csv",dtype=str)
@@ -264,6 +265,7 @@ class Starter:
         if phase >= 2:
             self.hh_size_person_factor = pd.read_csv(
                 "hh_size_person_factor.csv",dtype=str).hh_size_person_factor.ix[0]
+            
         else:
             self.hh_size_person_factor = 1.0
 

@@ -4,8 +4,9 @@ from collections import namedtuple
 
 import numpy as np
 import pandas as pd
-from scipy.stats import chisquare
+import math
 
+from scipy.stats import chisquare
 from . import categorizer as cat
 from . import draw
 from .ipf.ipf import calculate_constraints
@@ -26,6 +27,7 @@ def enable_logging():
 
 
 def rebalance(x0, tar, w=None):
+
     x = x0.copy()
     hh = x.sum()
     rx = np.array(range(len(x0)))
@@ -152,10 +154,13 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
             hasattr(recipe, "get_hh_size_weight") and
             hasattr(recipe, "get_hh_size_person_factor")):
             orig_hh_size = h_marg.loc["hh_size"].loc[recipe.hh_size_order]
+
+            pmax=max(p_marg.groupby(level=0).sum())
+            if math.isnan(pmax):
+                pmax=0
             h_marg.loc["hh_size"].loc[recipe.hh_size_order] = rebalance(
                 orig_hh_size,
-                tar=max(p_marg.groupby(level=0).sum()) *
-                    recipe.get_hh_size_person_factor(geog_id),
+                tar=pmax*float(recipe.get_hh_size_person_factor(geog_id)),
                 w=np.array(recipe.get_hh_size_weight(geog_id)))
         
             # df_marg=orig_hh_size.copy().reset_index()
