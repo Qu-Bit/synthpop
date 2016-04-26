@@ -53,7 +53,7 @@ def calculate_constraints(
     iterations = 0
 
     sums = marginals.groupby(level=0).sum()
-    if sums.max() - sums.min() > 0.01:
+    if sums.max() - sums.min() > 0.1:
         raise RuntimeError(
             'Marginals do not add up ipf will not converge: {}'.format(sums))
     del sums

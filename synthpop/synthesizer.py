@@ -1,3 +1,5 @@
+#synthesizer
+#semcog multiprocessing version
 import logging
 import sys
 from collections import namedtuple
@@ -5,12 +7,19 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 import math
+import multiprocessing as mp
 
 from scipy.stats import chisquare
 from . import categorizer as cat
 from . import draw
 from .ipf.ipf import calculate_constraints
 from .ipu.ipu import household_weights
+import time
+import psutil
+import os
+import gc
+
+
 
 logger = logging.getLogger("synthpop")
 FitQuality = namedtuple(
@@ -27,7 +36,10 @@ def enable_logging():
 
 
 def rebalance(x0, tar, w=None):
-
+    #adjust household size distribution based on population targets
+    #x0: # of hhs by hh size (list/vector)
+    #tar: target population by geo unit(block group, tract, etc)
+    #weight: for HHsize 7+, the average size in this block group (based on first synthesis run)
     x = x0.copy()
     hh = x.sum()
     rx = np.array(range(len(x0)))
@@ -48,8 +60,6 @@ def synthesize(h_marg, p_marg, h_jd, p_jd, h_pums, p_pums,
     # this is the zero marginal problem
     h_marg = h_marg.replace(0, marginal_zero_sub)
     p_marg = p_marg.replace(0, marginal_zero_sub)
-
-  
 
     # zero cell problem
     h_jd.frequency = h_jd.frequency.replace(0, jd_zero_sub)
@@ -94,7 +104,7 @@ def synthesize(h_marg, p_marg, h_jd, p_jd, h_pums, p_pums,
     logger.debug(iterations)
 
     num_households = int(h_marg.groupby(level=0).sum().mean())
-    print "Drawing %d households" % num_households
+    #print "Drawing %d households" % num_households
 
     best_chisq = np.inf
 
@@ -102,6 +112,73 @@ def synthesize(h_marg, p_marg, h_jd, p_jd, h_pums, p_pums,
         num_households, h_pums, p_pums, household_freq, h_constraint,
         p_constraint, best_weights, hh_index_start=hh_index_start)
 
+
+def synthesize_one(recipe, geog_id,
+                   marginal_zero_sub=.01, jd_zero_sub=.001):
+
+    #print "Synthesizing [state, county, tract, block group]:", geog_id.values
+    sys.stdout.flush()
+    
+    h_marg = recipe.get_household_marginal_for_geography(geog_id)
+    logger.debug("Household marginal")
+    logger.debug(h_marg)
+
+    p_marg = recipe.get_person_marginal_for_geography(geog_id)
+    logger.debug("Person marginal")
+    logger.debug(p_marg)
+
+    h_pums, h_jd = recipe.\
+        get_household_joint_dist_for_geography(geog_id)
+    logger.debug("Household joint distribution")
+    logger.debug(h_jd)
+
+    p_pums, p_jd = recipe.get_person_joint_dist_for_geography(geog_id)
+    logger.debug("Person joint distribution")
+    logger.debug(p_jd)
+
+    if (hasattr(recipe, "hh_size_order") and
+        hasattr(recipe, "get_hh_size_weight") and
+        hasattr(recipe, "get_hh_size_person_factor")):
+        orig_hh_size = h_marg.loc["hh_size"].loc[recipe.hh_size_order]
+
+        pmax=max(p_marg.groupby(level=0).sum())
+        if math.isnan(pmax):
+            pmax=0
+        h_marg.loc["hh_size"].loc[recipe.hh_size_order] = rebalance(
+            orig_hh_size,
+            tar=pmax*float(recipe.get_hh_size_person_factor(geog_id)),
+            w=np.array(recipe.get_hh_size_weight(geog_id)))
+
+    households, people, people_chisq, people_p = \
+        synthesize(
+            h_marg, p_marg, h_jd, p_jd, h_pums, p_pums,
+            marginal_zero_sub=marginal_zero_sub, jd_zero_sub=jd_zero_sub,
+            hh_index_start=0)    
+
+    #covert maringal to dataframe
+    h_marg=h_marg.to_frame(name='marginal')
+    h_marg.reset_index(inplace=True)
+    p_marg=p_marg.to_frame(name='marginal')
+    p_marg.reset_index(inplace=True)
+
+    # Append location identifiers to the synthesized tables+
+    for df in [households,people,h_marg,p_marg]:
+        for geog_cat in geog_id.keys():
+            df[geog_cat] = geog_id[geog_cat]
+    
+    #synthesized households index is hh_id, assign it to bg_hh_id, also rename people hh_id to avoid confusion
+    households['bg_hh_id']=households.index.values
+    people.rename(columns={"hh_id":"bg_hh_id"}, inplace=True)
+
+    key = BlockGroupID(
+        geog_id['state'], geog_id['county'], geog_id['tract'],
+        geog_id['block group'])
+    fit_quality = FitQuality(people_chisq, people_p)
+
+    return (households, people, [key,fit_quality], h_marg, p_marg)
+
+def synthesize_one_wrap(args):
+   return synthesize_one(*args)
 
 def synthesize_all(recipe, num_geogs=None, indexes=None,
                    marginal_zero_sub=.01, jd_zero_sub=.001):
@@ -117,93 +194,50 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
     """
     print "Synthesizing at geog level: '{}' (number of geographies is {})".\
         format(recipe.get_geography_name(), recipe.get_num_geographies())
-
+    
+    proc = psutil.Process(os.getpid())
+    print 'memory 1', proc.memory_info().rss
     if indexes is None:
         indexes = recipe.get_available_geography_ids()
-
-    hh_list = []
-    people_list = []
+    indexes=list(indexes)
+    
     cnt = 0
     fit_quality = {}
     hh_index_start = 0
+
+    #print 'pool exist', pool
+    #multiprocess synthesis
+    time0=time.time()
+    #pool = mp.Pool(processes=6,maxtasksperchild=50)
+    pool = mp.Pool(processes=8)
+    #results = [pool.apply_async(synthesize_one, args=(recipe,geog_id)) for geog_id in indexes]
+    results = pool.map(synthesize_one_wrap, [(recipe,geog_id) for geog_id in indexes])
+    pool.close()
+    pool.join()
+    print "multiprocessing time in seconds: ",time.time()-time0
+    proc = psutil.Process(os.getpid())
+    print 'memory multiprocessing end', proc.memory_info().rss   
+    #results=[res.get() for res in results]
+    results=zip(*results)
+
     
-    # TODO will parallelization work here?
-    lst_output=[['geo_id','hh_marg','hh_output','person_marg','person_output','p_chisq','p_p']]
-    marg_lst=[]
-    for geog_id in indexes:
-        print "Synthesizing geog id:\n", geog_id
+    #process results
+    all_households = pd.concat(results[0], ignore_index=True)
+    all_households['hh_id']=all_households.index.values
+    
+    all_persons = pd.concat(results[1], ignore_index=True)
+    joinid=list(geog_id.keys())+['bg_hh_id']
+    all_persons = pd.merge(all_persons ,all_households[joinid+['hh_id']], on = joinid,how='left')
+    
+    fit_quality= dict((item[0],item[1]) for item in results[2])
 
-        h_marg = recipe.get_household_marginal_for_geography(geog_id)
-        logger.debug("Household marginal")
-        logger.debug(h_marg)
-
-        p_marg = recipe.get_person_marginal_for_geography(geog_id)
-        logger.debug("Person marginal")
-        logger.debug(p_marg)
-
-        h_pums, h_jd = recipe.\
-            get_household_joint_dist_for_geography(geog_id)
-        logger.debug("Household joint distribution")
-        logger.debug(h_jd)
-
-        p_pums, p_jd = recipe.get_person_joint_dist_for_geography(geog_id)
-        logger.debug("Person joint distribution")
-        logger.debug(p_jd)
-
-        if (hasattr(recipe, "hh_size_order") and
-            hasattr(recipe, "get_hh_size_weight") and
-            hasattr(recipe, "get_hh_size_person_factor")):
-            orig_hh_size = h_marg.loc["hh_size"].loc[recipe.hh_size_order]
-
-            pmax=max(p_marg.groupby(level=0).sum())
-            if math.isnan(pmax):
-                pmax=0
-            h_marg.loc["hh_size"].loc[recipe.hh_size_order] = rebalance(
-                orig_hh_size,
-                tar=pmax*float(recipe.get_hh_size_person_factor(geog_id)),
-                w=np.array(recipe.get_hh_size_weight(geog_id)))
-        
-            # df_marg=orig_hh_size.copy().reset_index()
-            # df_marg.insert(0, 'cat_name', 'orig_hh_size')
-            # df_marg.columns=['cat_name','cat_value','marginal']
-            # for indx in reversed(geog_id.index):
-            #     df_marg.insert(0, indx, geog_id[indx])
-            # marg_lst.append(df_marg)
-
-        for df_marg in [h_marg, p_marg]:
-            df_marg=df_marg.copy().reset_index()
-            df_marg.columns=['cat_name','cat_value','marginal']
-            for indx in reversed(geog_id.index):
-                df_marg.insert(0, indx, geog_id[indx])
-            marg_lst.append(df_marg)
-
-        households, people, people_chisq, people_p = \
-            synthesize(
-                h_marg, p_marg, h_jd, p_jd, h_pums, p_pums,
-                marginal_zero_sub=marginal_zero_sub, jd_zero_sub=jd_zero_sub,
-                hh_index_start=hh_index_start)
-
-        # Append location identifiers to the synthesized households
-        for geog_cat in geog_id.keys():
-            households[geog_cat] = geog_id[geog_cat]
-
-        hh_list.append(households)
-        people_list.append(people)
-        key = BlockGroupID(
-            geog_id['state'], geog_id['county'], geog_id['tract'],
-            geog_id['block group'])
-        fit_quality[key] = FitQuality(people_chisq, people_p)
-
-        cnt += 1
-        if len(households) > 0:
-            hh_index_start = households.index.values[-1] + 1
-
-        if num_geogs is not None and cnt >= num_geogs:
-            break
-
-    # TODO might want to write this to disk as we go?
-    all_households = pd.concat(hh_list)
-    all_persons = pd.concat(people_list, ignore_index=True)
-
-
-    return (all_households, all_persons, fit_quality, marg_lst)
+    df_h_marg=pd.concat(results[3], ignore_index=True)
+    df_p_marg=pd.concat(results[4], ignore_index=True)
+    print "result produce time in seconds: ",time.time()-time0
+    proc = psutil.Process(os.getpid())
+    print 'memory result end', proc.memory_info().rss
+    del results, pool
+    mp.active_children()  # discard dead process objs
+    gc.collect()  
+    
+    return (all_households, all_persons, fit_quality, df_h_marg,df_p_marg )

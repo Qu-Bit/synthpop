@@ -136,7 +136,7 @@ class Starter:
             ("hh_cars", "none"): "B08201_002E",
             ("hh_cars", "one"): "B08201_003E",
             ("hh_cars", "two or more"):
-                    "B08201_004E + B08201_005E + B08201_006E",
+                    "B08201_001E - (B08201_002E + B08201_003E)",
             ("hh_workers", "none"): "B08202_002E",
             ("hh_workers", "one"): "B08202_003E",
             ("hh_workers", "two or more"): "B08201_001E - (B08202_002E + B08202_003E)",
@@ -222,7 +222,6 @@ class Starter:
         all_columns = population + sex + race + male_age_columns + \
             female_age_columns + hh_population 
         p_acs = c.block_group_query(all_columns, state, county, tract=tract)
-
 
         self.p_acs_cat = cat.categorize(p_acs, {
                 ("person_age", "17 and under"):
