@@ -1,3 +1,4 @@
+#crosstab tenure(2) x head(4)
 import numpy as np
 import pandas as pd
 import os
@@ -57,6 +58,7 @@ class Starter:
         workers_columns = ['B08202_0%02dE' % i for i in range(1, 6)]
         presence_of_children_columns = ['B11005_001E', 'B11005_002E', 'B11005_011E']
         presence_of_seniors_columns = ['B11007_002E', 'B11007_007E']
+        tenure_columns = ['B25038_0%02dE' % i for i in range(1, 16)]
         #tenure_mover_columns = ['B25038_0%02dE' % i for i in range(1, 16)]
 ##        block_group_columns = (
 ##            income_columns + presence_of_children_columns +
@@ -65,7 +67,7 @@ class Starter:
 ##            race_of_head_columns + hispanic_head_columns)
         block_group_columns = (
             income_columns + presence_of_children_columns +
-            presence_of_seniors_columns +
+            presence_of_seniors_columns + tenure_columns +
             hh_size_columns + age_of_head_columns +
             race_of_head_columns+ hispanic_head_columns)
         tract_columns = vehicle_columns + workers_columns
@@ -82,15 +84,32 @@ class Starter:
 
             #("sf_detached", "yes"): "B25032_003E + B25032_014E",
             #("sf_detached", "no"): "B25032_001E - B25032_003E - B25032_014E",
-            ("hh_age_of_head", "lt25"):
-                "B25007_003E + B25007_013E",
-            ("hh_age_of_head", "ge25-lt45"):
-                "B25007_004E + B25007_005E + B25007_014E + B25007_015E ",
-            ("hh_age_of_head", "ge45-lt65"):
-                "B25007_006E + B25007_007E + B25007_008E + B25007_016E + B25007_017E + B25007_018E ",
-            ("hh_age_of_head", "ge65"):
-                "B25007_009E + B25007_010E + B25007_011E + "
-                "B25007_019E + B25007_020E + B25007_021E",
+##            ("hh_age_of_head", "lt25"):
+##                "B25007_003E + B25007_013E",
+##            ("hh_age_of_head", "ge25-lt45"):
+##                "B25007_004E + B25007_005E + B25007_014E + B25007_015E ",
+##            ("hh_age_of_head", "ge45-lt65"):
+##                "B25007_006E + B25007_007E + B25007_008E + B25007_016E + B25007_017E + B25007_018E ",
+##            ("hh_age_of_head", "ge65"):
+##                "B25007_009E + B25007_010E + B25007_011E + "
+##                "B25007_019E + B25007_020E + B25007_021E",
+
+            ("hh_tenure_agehead", "ownlt25"): 
+                "B25007_003E",
+            ("hh_tenure_agehead", "rentlt25"):
+                "B25007_013E",
+            ("hh_tenure_agehead", "ownge25-lt45"):
+                "B25007_004E + B25007_005E",
+            ("hh_tenure_agehead", "rentge25-lt45"):
+                "B25007_014E + B25007_015E ",
+            ("hh_tenure_agehead", "ownge45-lt65"):
+                "B25007_006E + B25007_007E + B25007_008E",
+            ("hh_tenure_agehead", "rentge45-lt65"):
+                "B25007_016E + B25007_017E + B25007_018E",
+            ("hh_tenure_agehead", "ownge65"):
+                "B25007_009E + B25007_010E + B25007_011E",
+            ("hh_tenure_agehead", "rentge65"):
+                "B25007_019E + B25007_020E + B25007_021E",           
             ("hh_race_of_head", "black"): "B25006_003E",
             ("hh_race_of_head", "white"): "B25006_002E",
             ("hh_race_of_head", "asian"): "B25006_005E",
@@ -108,16 +127,16 @@ class Starter:
             ("hh_income", "lt30"):
                 "B19001_002E + B19001_003E + B19001_004E + "
                 "B19001_005E + B19001_006E",
-            ("hh_income", "gt30-lt60"):
+            ("hh_income", "ge30-lt60"):
                 "B19001_007E + B19001_008E + B19001_009E + "
                 "B19001_010E + B19001_011E",
-            ("hh_income", "gt60-lt100"): "B19001_012E + B19001_013E",
-            ("hh_income", "gt100"): "B19001_014E + B19001_015E + B19001_016E + B19001_017E",
+            ("hh_income", "ge60-lt100"): "B19001_012E + B19001_013E",
+            ("hh_income", "ge100"): "B19001_014E + B19001_015E + B19001_016E + B19001_017E",
             #("hh_income", "gt150"): "B19001_016E + B19001_017E",
             ("hh_cars", "none"): "B08201_002E",
             ("hh_cars", "one"): "B08201_003E",
             ("hh_cars", "two or more"):
-                "B08201_001E - (B08201_002E + B08201_003E)",
+                    "B08201_004E + B08201_005E + B08201_006E",
             ("hh_workers", "none"): "B08202_002E",
             ("hh_workers", "one"): "B08202_003E",
             ("hh_workers", "two or more"): "B08201_001E - (B08202_002E + B08202_003E)",
@@ -125,6 +144,9 @@ class Starter:
 ##            ("tenure_mover", "own not recent"): "B25038_002E - B25038_003E",
 ##            ("tenure_mover", "rent recent"): "B25038_010E",
 ##            ("tenure_mover", "rent not recent"): "B25038_009E - B25038_010E",
+##            ("tenure", "own"): "B25038_002E",
+##            ("tenure", "rent"): "B25038_009E",
+            
             ("hh_size", "one"): "B25009_003E + B25009_011E",
             ("hh_size", "two"): "B25009_004E + B25009_012E",
             ("hh_size", "three"): "B25009_005E + B25009_013E",
@@ -331,14 +353,35 @@ class Starter:
 ##                return "yes"
 ##            return "no"
 
-        def age_of_head_cat(r):
-            if r.age_of_head < 25:
-                return "lt25"
-            elif (r.age_of_head >= 25) & (r.age_of_head < 45) :
-                return "ge25-lt45"
-            elif (r.age_of_head >= 45) & (r.age_of_head < 65) :
-                return "ge45-lt65"
-            return "ge65"
+##        def age_of_head_cat(r):
+##            if r.age_of_head < 25:
+##                return "lt25"
+##            elif (r.age_of_head >= 25) & (r.age_of_head < 45) :
+##                return "ge25-lt45"
+##            elif (r.age_of_head >= 45) & (r.age_of_head < 65) :
+##                return "ge45-lt65"
+##            return "ge65"
+
+
+        def tenure_agehead_cat(r):
+            if (r.age_of_head < 25) & (r.TEN < 3):
+                return "ownlt25"
+            elif (r.age_of_head < 25) & (r.TEN >= 3):
+                return "rentlt25"
+            elif (r.age_of_head >= 25) & (r.age_of_head < 45) & (r.TEN < 3) :
+                return "ownge25-lt45"
+            elif (r.age_of_head >= 25) & (r.age_of_head < 45) & (r.TEN >= 3) :
+                return "rentge25-lt45"
+            elif (r.age_of_head >= 45) & (r.age_of_head < 65) & (r.TEN < 3) :
+                return "ownge45-lt65"            
+            elif (r.age_of_head >= 45) & (r.age_of_head < 65) & (r.TEN >= 3) :
+                return "rentge45-lt65"
+            elif (r.age_of_head >= 65) & (r.TEN < 3) :
+                return "ownge65"            
+            return "rentge65"
+
+
+
 
         def race_of_head_cat(r):
             if r.race_of_head == 1:
@@ -388,11 +431,11 @@ class Starter:
 ##
         def income_cat(r):
             if r.HINCP >= 100000:
-                return "gt100"
+                return "ge100"
             elif (r.HINCP >= 60000) & (r.HINCP < 100000):
-                return "gt60-lt100"
+                return "ge60-lt100"
             elif (r.HINCP >= 30000) & (r.HINCP < 60000):
-                return "gt30-lt60"
+                return "ge30-lt60"
             return "lt30"
 
         def workers_cat(r):
@@ -401,7 +444,12 @@ class Starter:
             elif r.workers == 1:
                 return "one"
             return "none"
-
+        
+##        def tenure_cat(r):
+##            if r.TEN < 3:
+##                return "own"
+##            return "rent"
+        
 ##        def tenure_mover_cat(r):
 ##            if (r.MV < 4) & (r.TEN < 3):
 ##                return "own recent"
@@ -415,14 +463,16 @@ class Starter:
             h_pums,
             cat.category_combinations(self.h_acs_cat.columns),
             {
-            "hh_cars": cars_cat,
+             "hh_cars": cars_cat,
              "hh_children": children_cat,
              "hh_income": income_cat,
              "hh_workers": workers_cat,
+##             "tenure": tenure_cat,
+             "hh_tenure_agehead": tenure_agehead_cat,
              #"tenure_mover": tenure_mover_cat,
 ##             "seniors": seniors_cat,
              "hh_size": hh_size_cat,
-             "hh_age_of_head": age_of_head_cat,
+             #"hh_age_of_head": age_of_head_cat,
              #"sf_detached": sf_detached_cat,
              "hh_race_of_head": race_of_head_cat,
              "hispanic_head": hispanic_head_cat
