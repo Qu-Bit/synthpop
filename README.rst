@@ -22,3 +22,12 @@ The paper is available here:
 http://www.scag.ca.gov/Documents/PopulationSynthesizerPaper_TRB.pdf
 
 .. _PopGen: http://urbanmodel.asu.edu/popgen.html
+
+debian packaging
+================
+
+  * with **stdeb**: now seems to work
+    `python setup.py --command-packages=stdeb.command bdist_deb`
+    - no tests are executed
+
+
