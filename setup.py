@@ -1,6 +1,3 @@
-#from ez_setup import use_setuptools
-#use_setuptools()
-
 from setuptools import setup, find_packages
 
 setup(
@@ -26,7 +23,10 @@ setup(
     ]
 )
 
-# testing now with:
+# tested with:
+#import setuptools      # ubuntu (16.04) package
+#setuptools.__version__ '20.7.0'
+
 #numexpr.__version__ '2.4.3'
 #np.__version__ '1.11.0'
 #pd.__version__ '0.18.1'
