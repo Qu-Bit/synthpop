@@ -1,14 +1,25 @@
 import pytest
 import numpy as np
-from ..census_helpers import Census
+try:
+    from ..census_helpers import Census
+except ImportError:
+    pass
 from .. import categorizer as cat
 
+def got_module(mod_name):
+    return mod_name in dir()
 
+
+# TODO: keep these tests,
+#       but REMOVE the census deps by using static test data
+
+@pytest.mark.skipif(not got_module('census'), reason='census module not available')
 @pytest.fixture
 def c():
     return Census("827402c2958dcf515e4480b7b2bb93d1025f9389")
 
 
+@pytest.mark.skipif(not got_module('census'), reason='census module not available')
 @pytest.fixture
 def acs_data(c):
     population = ['B01001_001E']
@@ -22,11 +33,13 @@ def acs_data(c):
     return df
 
 
+@pytest.mark.skipif(not got_module('census'), reason='census module not available')
 @pytest.fixture
 def pums_data(c):
     return c.download_population_pums("06", "07506")
 
 
+@pytest.mark.skipif(not got_module('census'), reason='census module not available')
 def test_categorize(acs_data, pums_data):
     p_acs_cat = cat.categorize(acs_data, {
         ("population", "total"): "B01001_001E",

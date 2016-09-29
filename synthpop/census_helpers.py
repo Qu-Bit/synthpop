@@ -1,8 +1,9 @@
+import os
 import census
-import pandas as pd
-import numpy as np
 import us
 
+import pandas as pd
+import numpy as np
 
 # TODO DOCSTRING!!
 class Census:
@@ -12,27 +13,14 @@ class Census:
 ##        self.c = census.Census(key)
 ##        self.base_url = "https://s3-us-west-2.amazonaws.com/synthpop-data/"
 ##        self.pums_relationship_file_url = self.base_url + "tract10_to_puma.csv"
-##        self.pums_relationship_df = None
-##        self.pums10_population_base_url = \
-##            self.base_url + "puma10_p_%s_%s.csv"
-##        self.pums10_household_base_url = \
-##            self.base_url + "puma10_h_%s_%s.csv"
-##        self.pums00_population_base_url = \
-##            self.base_url + "puma00_p_%s_%s.csv"
-##        self.pums00_household_base_url = \
-##            self.base_url + "puma00_h_%s_%s.csv"
-##        self.pums_population_state_base_url = \
-##            self.base_url + "puma_p_%s.csv"
-##        self.pums_household_state_base_url = \
-##            self.base_url + "puma_h_%s.csv"
-##        self.fips_url = self.base_url + "national_county.txt"
-##        self.fips_df = None
-##        self.pums_cache = {}
 
 
         self.c = census.Census(key)
-        self.base_url = "/home/da/tools/synthpop/demos/inputs/"
-        self.pums_relationship_file_url =self.base_url+ "tract10_to_puma.csv"
+        # set data file path relative to current __file__'s
+        self.base_url = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                     "../demos/input_data/")
+        self.pums_relationship_file_url =self.base_url+ "2010_Census_Tract_to_2010_PUMA.txt"
+                                                        #"tract10_to_puma.csv"
         #http://www2.census.gov/geo/docs/maps-data/data/rel/2010_Census_Tract_to_2010_PUMA.txt
         self.pums_relationship_df = None
         #self.base_url = "http://paris.urbansim.org/data/pums/"
@@ -55,9 +43,6 @@ class Census:
         #http://www2.census.gov/geo/docs/reference/codes/files/national_county.txt
         self.fips_df = None
         self.pums_cache = {}
-
-
-
 
 
     # df1 is the disaggregate data frame (e.g. block groups)
@@ -140,6 +125,20 @@ class Census:
                                     tract_columns, state, county,
                                     merge_columns, block_group_size_attr,
                                     tract_size_attr, tract=None, year=None):
+        """
+        - missing doc -
+        :param block_group_columns:
+        :param tract_columns:
+        :param state:
+        :param county:
+        :param merge_columns:
+        :param block_group_size_attr:
+        :param tract_size_attr:
+        :param tract:
+        :param year:
+        :return: pandas.DataFrame
+        """
+        print('+ block_group_and_tract_query')
         df2 = self.tract_query(tract_columns, state, county, tract=tract,
                                year=year)
         df1 = self.block_group_query(block_group_columns, state, county,
@@ -233,6 +232,7 @@ class Census:
         return pums
 
     def try_fips_lookup(self, state, county=None):
+        print('+ try_fips_lookup')
         df = self._get_fips_lookup()
 
         if county is None:

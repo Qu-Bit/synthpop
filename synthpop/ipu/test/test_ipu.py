@@ -177,9 +177,9 @@ def test_household_weights_max_iter(
 
 def test_FrequencyAndConstraints(freq_wrap):
     assert freq_wrap.ncols == 5
-    assert len(list(freq_wrap.iter_columns())) == 5
+    assert len(list(freq_wrap.iter_columns)) == 5
 
-    iter_cols = freq_wrap.iter_columns()
+    iter_cols = freq_wrap.iter_columns
 
     key, col, constraint, nz = next(iter_cols)
     assert key == ('yes', 'blue')

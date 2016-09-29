@@ -1,14 +1,21 @@
 import pytest
-from ..census_helpers import Census
+try:
+    from ..census_helpers import Census
+except ImportError:
+    pass;
 import numpy as np
 from pandas.util.testing import assert_series_equal
 
+def got_module(mod_name):
+    return mod_name in dir()
 
+@pytest.mark.skipif(not got_module('census'), reason='census module not available')
 @pytest.fixture
 def c():
     return Census("827402c2958dcf515e4480b7b2bb93d1025f9389")
 
 
+@pytest.mark.skipif(not got_module('census'), reason='census module not available')
 def test_block_group_and_tract_query(c):
     income_columns = ['B19001_0%02dE' % i for i in range(1, 18)]
     vehicle_columns = ['B08201_0%02dE' % i for i in range(1, 7)]
@@ -46,6 +53,7 @@ def test_block_group_and_tract_query(c):
     assert np.all(df.county == "075")
 
 
+@pytest.mark.skipif(not got_module('census'), reason='census module not available')
 def test_wide_block_group_query(c):
     population = ['B01001_001E']
     sex = ['B01001_002E', 'B01001_026E']
@@ -62,11 +70,13 @@ def test_wide_block_group_query(c):
     assert len(df.columns) > 50
 
 
+@pytest.mark.skipif(not got_module('census'), reason='census module not available')
 def test_tract_to_puma(c):
     puma = c.tract_to_puma("06", "075", "030600")[0]
     assert puma == "07506"
 
 
+@pytest.mark.skipif(not got_module('census'), reason='census module not available')
 def test_download_pums(c):
     puma = "07506"
     c.download_population_pums("06", puma)

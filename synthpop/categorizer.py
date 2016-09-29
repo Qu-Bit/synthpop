@@ -1,14 +1,26 @@
+import six
 import itertools
 
 import numpy as np
 import pandas as pd
 
+# TODO: convert to py3 !!!
 
 # TODO DOCSTRINGS!!
 def categorize(df, eval_d, index_cols=None):
+    """
+    (doc guessed) categorizes df according to evaluation dict
+    - this seems to have been necessary before "category" dtype was in pandas
+    :param df:  data to categorize; pd.DataFrame
+    :param eval_d:  evaluation dict
+    :param index_cols:  ???
+    :return:   pd.DataFrame with categorical data; - TO CHECK !!!
+    """
     cat_df = pd.DataFrame(index=df.index)
 
-    for index, expr in eval_d.iteritems():
+    print('+ categorizing ...')
+    #for index, expr in eval_d.iteritems():     # py2
+    for index, expr in six.iteritems(eval_d):
         cat_df[index] = df.eval(expr)
 
     if index_cols is not None:
@@ -17,7 +29,6 @@ def categorize(df, eval_d, index_cols=None):
 
     cat_df.columns = pd.MultiIndex.from_tuples(cat_df.columns,
                                                names=['cat_name', 'cat_value'])
-
     cat_df = cat_df.sort_index(axis=1)
 
     return cat_df

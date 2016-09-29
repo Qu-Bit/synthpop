@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 from __future__ import division
+import six
 
 import itertools
 from collections import OrderedDict
@@ -75,6 +76,7 @@ class _FrequencyAndConstraints(object):
             (t[0], t) for t in itertools.chain(hh_cols, p_cols))
         self.ncols = len(self._everything)
 
+    @property
     def iter_columns(self):
         """
         Iterate over columns of both household and frequency tables AND
@@ -84,7 +86,7 @@ class _FrequencyAndConstraints(object):
         The returned column contains only the non-zero elements.
 
         """
-        return self._everything.itervalues()
+        return six.itervalues(self._everything)
 
     def get_column(self, key):
         """
@@ -145,8 +147,8 @@ def _average_fit_quality(freq_wrap, weights):
     """
     return sum(
         _fit_quality(col, weights[nz], constraint)
-        for _, col, constraint, nz in freq_wrap.iter_columns()
-        ) / freq_wrap.ncols
+        for _, col, constraint, nz in freq_wrap.iter_columns
+    ) / freq_wrap.ncols
 
 
 def _update_weights(column, weights, constraint):
@@ -230,7 +232,7 @@ def household_weights(
     iterations = 0
 
     while fit_change > convergence:
-        for _, col, constraint, nz in freq_wrap.iter_columns():
+        for _, col, constraint, nz in freq_wrap.iter_columns:
             weights[nz] = _update_weights(col, weights[nz], constraint)
 
         new_fit_qual = _average_fit_quality(freq_wrap, weights)

@@ -53,7 +53,7 @@ def _draw_indexes(num, fac, weights):
     idx = []
     constraint_diffs = []
 
-    for col_name, _, constraint, nz in fac.iter_columns():
+    for col_name, _, constraint, nz in fac.iter_columns:
         if len(nz) == 0:
             continue
 

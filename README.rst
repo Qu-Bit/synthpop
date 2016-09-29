@@ -27,7 +27,15 @@ debian packaging
 ================
 
   * with **stdeb**: now seems to work
-    `python setup.py --command-packages=stdeb.command bdist_deb`
+    > python setup.py --command-packages=stdeb.command bdist_deb
     - no tests are executed
+    > python3 setup.py --command-packages=stdeb.command bdist_deb
 
+testing routine
+===============
 
+* raw py2:
+   > synthpop$ py.test -x --pdb
+
+* raw py3:
+   > synthpop$ py.test-3 -x --pdb

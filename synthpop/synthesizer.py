@@ -1,5 +1,7 @@
-#synthesizer
-#semcog multiprocessing version
+# synthesizer
+#   semcog multiprocessing version
+from __future__ import print_function
+
 import logging
 import sys
 from collections import namedtuple
@@ -192,11 +194,11 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
         and ``people_p``.
 
     """
-    print "Synthesizing at geog level: '{}' (number of geographies is {})".\
-        format(recipe.get_geography_name(), recipe.get_num_geographies())
-    
+    print("Synthesizing at geog level: '{}' (number of geographies is {})".
+          format(recipe.get_geography_name(), recipe.get_num_geographies()))
+
     proc = psutil.Process(os.getpid())
-    print 'memory 1', proc.memory_info().rss
+    print('memory 1', proc.memory_info().rss)
     if indexes is None:
         indexes = recipe.get_available_geography_ids()
     indexes=list(indexes)
@@ -214,16 +216,16 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
     results = pool.map(synthesize_one_wrap, [(recipe,geog_id) for geog_id in indexes])
     pool.close()
     pool.join()
-    print "multiprocessing time in seconds: ",time.time()-time0
+    print("multiprocessing time in seconds: ", time.time() - time0)
     proc = psutil.Process(os.getpid())
-    print 'memory multiprocessing end', proc.memory_info().rss   
+    print('memory multiprocessing end', proc.memory_info().rss)
     #results=[res.get() for res in results]
-    results=zip(*results)
+    results=list(zip(*results))
 
     
     #process results
     all_households = pd.concat(results[0], ignore_index=True)
-    all_households['hh_id']=all_households.index.values
+    all_households['hh_id'] = all_households.index.values
     
     all_persons = pd.concat(results[1], ignore_index=True)
     joinid=list(geog_id.keys())+['bg_hh_id']
@@ -233,9 +235,9 @@ def synthesize_all(recipe, num_geogs=None, indexes=None,
 
     df_h_marg=pd.concat(results[3], ignore_index=True)
     df_p_marg=pd.concat(results[4], ignore_index=True)
-    print "result produce time in seconds: ",time.time()-time0
+    print("result produce time in seconds: ", time.time() - time0)
     proc = psutil.Process(os.getpid())
-    print 'memory result end', proc.memory_info().rss
+    print('memory result end', proc.memory_info().rss)
     del results, pool
     mp.active_children()  # discard dead process objs
     gc.collect()  

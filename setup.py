@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='SynthPop',
-    version='0.1dev',
+    version='0.2dev',
     description='Population Synthesis',
     author='Autodesk',
     author_email='udst@autodesk.com',
@@ -14,12 +14,12 @@ setup(
     ],
     packages=find_packages(exclude=['*.tests']),
     install_requires=[
-        'census>=0.5',
         'numexpr>=2.3.1',
         'numpy>=1.8.0',
         'pandas>=0.13.1',
         'scipy>=0.13.3',
-        'us>=0.8'
+        #'census>=0.5',
+        #'us>=0.8'
     ]
 )
 
