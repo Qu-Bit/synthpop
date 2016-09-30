@@ -19,8 +19,7 @@ class Census:
         # set data file path relative to current __file__'s
         self.base_url = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                      "../demos/input_data/")
-        self.pums_relationship_file_url =self.base_url+ "2010_Census_Tract_to_2010_PUMA.txt"
-                                                        #"tract10_to_puma.csv"
+        self.pums_relationship_file_url =self.base_url+ "tract10_to_puma.csv"
         #http://www2.census.gov/geo/docs/maps-data/data/rel/2010_Census_Tract_to_2010_PUMA.txt
         self.pums_relationship_df = None
         #self.base_url = "http://paris.urbansim.org/data/pums/"
