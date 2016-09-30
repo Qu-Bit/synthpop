@@ -64,3 +64,40 @@ def test_not_add_ipf():
 
     with pytest.raises(RuntimeError):
         ipf.calculate_constraints(marginals, joint_dist)
+
+def test_ipf_4OD():
+    """test IPF for simple OD (2x2) cases
+    """
+    marginal_midx = pd.MultiIndex.from_tuples(
+            [('o', 1),
+             ('o', 2),
+             ('d', 1),
+             ('d', 2)])
+    # exact sum marginals
+    marginals = pd.Series([5, 6, 4, 7], index=marginal_midx)
+    joint_dist_midx = pd.MultiIndex.from_product(
+            [(1, 2), (1, 2)],
+            names=['o', 'd'])
+    joint_dist = pd.Series([3, 2, 1, 5], index=joint_dist_midx)
+    # trivial case: identity
+    constraints, _ = ipf.calculate_constraints(marginals, joint_dist)
+    pdt.assert_series_equal(constraints, joint_dist, check_dtype=False)
+    # with twice the marginals
+    constraints, _ = ipf.calculate_constraints(marginals*2, joint_dist)
+    pdt.assert_series_equal(constraints, joint_dist*2, check_dtype=False)
+
+    # non-linear in d-sums
+    marginals = pd.Series([5, 6, 3, 8], index=marginal_midx)
+    constraints, _ = ipf.calculate_constraints(marginals, joint_dist)
+    expected =  pd.Series([2.360679, 2.639257, 0.639321, 5.360743],
+                          index=joint_dist.index)
+    pdt.assert_series_equal(constraints, expected, check_dtype=False)
+
+    # non-linear in o-sums
+    marginals = pd.Series([7, 4, 4, 7], index=marginal_midx)
+    constraints, _ = ipf.calculate_constraints(marginals, joint_dist)
+    expected =  pd.Series([3.523743, 3.476232, 0.476257, 3.523768],
+                          index=joint_dist.index)
+    pdt.assert_series_equal(constraints, expected, check_dtype=False)
+
+

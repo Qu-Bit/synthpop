@@ -36,7 +36,7 @@ def calculate_constraints(
     -------
     constraints : pandas.Series
         Will have the index of `joint_dist` and contain the desired
-        totals for each class.
+        (joint-pdf adapted to marginals conditions) results for each class.
     iterations : int
         Number of iterations performed.
 
